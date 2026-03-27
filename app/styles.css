@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/* Theme variables */
+:root {
+  --background: #0e0e13;
+  --foreground: #f9f5fd;
+  --primary: #8ff5ff;
+  --secondary: #d674ff;
+  --tertiary: #ac89ff;
+  --card-bg: rgba(25, 25, 31, 0.4);
+  --card-border: rgba(143, 245, 255, 0.1);
+}
+
+/* Reset */
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+/* Base styles */
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Manrope', sans-serif;
+}
+
+body {
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(143, 245, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(214, 116, 255, 0.1) 0%, transparent 50%),
+    linear-gradient(135deg, #0e0e13 0%, #1a1a24 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-space), sans-serif;
+}
+
+/* Background grid */
+.grid-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(143, 245, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(143, 245, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: -1;
+}
