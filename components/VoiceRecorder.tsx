@@ -13,70 +13,95 @@ export default function VoiceRecorder({ onTranscript, disabled = false }: VoiceR
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
-    // Check if browser is Chrome
     setIsChrome(navigator.userAgent.includes('Chrome'));
     
-    // Initialize speech recognition if available
     if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'en-US';
+      const recognition = new SpeechRecognition();
+      
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
 
-      recognitionRef.current.onresult = (event: any) => {
-        let transcript = '';
+      recognition.onresult = (event: any) => {
+        let newTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
+          // Only process finalized speech to avoid the "repeating text" bug
+          if (event.results[i].isFinal) {
+            newTranscript += event.results[i][0].transcript;
+          }
         }
-        onTranscript(transcript);
+        
+        if (newTranscript) {
+          onTranscript(newTranscript);
+        }
       };
 
-      recognitionRef.current.onerror = (event: any) => {
+      recognition.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
         setIsRecording(false);
       };
+
+      recognitionRef.current = recognition;
     }
-  }, [onTranscript]);
+
+    // CLEANUP: Stop recognition when component unmounts
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+    // Removed onTranscript from here to prevent re-initialization loops
+  }, []); 
 
   const toggleRecording = () => {
-    if (!recognitionRef.current) {
-      alert('Speech recognition is not available in your browser. Please use Chrome.');
-      return;
-    }
+    if (!recognitionRef.current) return;
 
     if (isRecording) {
       recognitionRef.current.stop();
       setIsRecording(false);
     } else {
-      recognitionRef.current.start();
-      setIsRecording(true);
+      try {
+        recognitionRef.current.start();
+        setIsRecording(true);
+      } catch (err) {
+        // Prevents error if user clicks start too fast after stopping
+        console.error("Recognition already started");
+      }
     }
   };
 
   return (
     <div className="flex items-center gap-4">
       <button
+        type="button" // Always specify type="button" inside forms
         onClick={toggleRecording}
-        disabled={disabled || !isChrome}
-        className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+        disabled={disabled}
+        className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
           isRecording
             ? 'bg-red-500 hover:bg-red-600 text-white'
             : 'bg-cyan-500 hover:bg-cyan-600 text-white'
-        } ${disabled || !isChrome ? 'opacity-50 cursor-not-allowed' : ''}`}
+        } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
-        {isRecording ? '🔴 Stop Recording' : '🎤 Start Voice Recording'}
+        {isRecording ? (
+          <>
+            <span className="w-3 h-3 bg-white rounded-full animate-pulse" />
+            Stop Recording
+          </>
+        ) : (
+          <>
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" />
+            </svg>
+            Start Recording
+          </>
+        )}
       </button>
-      {isRecording && (
-        <div className="flex items-center gap-2">
-          <div className="animate-pulse w-3 h-3 bg-red-500 rounded-full"></div>
-          <span className="text-red-400">Recording...</span>
-        </div>
-      )}
+      
       {!isChrome && (
-        <div className="text-yellow-400 text-sm">
-          ⚠️ Voice recording works best in Chrome
-        </div>
+        <span className="text-yellow-400 text-xs italic">
+          Best on Chrome
+        </span>
       )}
     </div>
   );
