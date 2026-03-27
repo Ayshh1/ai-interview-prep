@@ -25,33 +25,39 @@ interface AnswerWithFeedback {
 }
 
 export default function ResultsPage() {
-  const [results, setResults] = useState<AnswerWithFeedback[]>([]);
-  const [role, setRole] = useState<string>('');
   const [copied, setCopied] = useState(false);
   
   const router = useRouter();
 
-  useEffect(() => {
-    // Load results and role from sessionStorage
+  // Load data synchronously during render
+  const [results, role] = (() => {
+    if (typeof window === 'undefined') return [[], ''] as [AnswerWithFeedback[], string];
+    
     const storedResults = sessionStorage.getItem('results');
     const storedRole = sessionStorage.getItem('role');
     
     if (!storedResults || !storedRole) {
-      router.push('/');
-      return;
+      // Redirect will happen in effect
+      return [[], ''] as [AnswerWithFeedback[], string];
     }
     
     try {
-      setResults(JSON.parse(storedResults));
-      setRole(storedRole);
+      return [JSON.parse(storedResults), storedRole] as [AnswerWithFeedback[], string];
     } catch (error) {
       console.error('Error loading results:', error);
+      return [[], ''] as [AnswerWithFeedback[], string];
+    }
+  })();
+
+  useEffect(() => {
+    // Redirect if data is missing
+    if (results.length === 0 && role === '') {
       router.push('/');
     }
-  }, [router]);
+  }, [router, results.length, role]);
 
-  const calculateAverageScore = () => {
-    if (results.length === 0) return 0;
+  const calculateAverageScore = (): string => {
+    if (results.length === 0) return "0.0";
     const total = results.reduce((sum, result) => sum + result.feedback.score, 0);
     return (total / results.length).toFixed(1);
   };
@@ -95,13 +101,13 @@ export default function ResultsPage() {
   };
 
   const copyResultsToClipboard = () => {
-    const averageScore = calculateAverageScore();
-    const overallConfidence = getOverallConfidence();
+    const avg = calculateAverageScore();
+    const conf = getOverallConfidence();
     
     let text = `AI Interview Prep Results - ${role}\n`;
     text += `=====================================\n\n`;
-    text += `Overall Score: ${averageScore}/10\n`;
-    text += `Overall Confidence: ${overallConfidence}\n\n`;
+    text += `Overall Score: ${avg}/10\n`;
+    text += `Overall Confidence: ${conf}\n\n`;
     
     results.forEach((result, index) => {
       text += `Question ${index + 1} (${result.question.difficulty})\n`;
@@ -125,6 +131,7 @@ export default function ResultsPage() {
     router.push('/');
   };
 
+  // Prevent rendering until results are loaded
   if (results.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -167,7 +174,6 @@ export default function ResultsPage() {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex gap-4 justify-center">
               <button
                 onClick={handleStartOver}
@@ -193,13 +199,12 @@ export default function ResultsPage() {
               className="backdrop-blur-md border border-cyan-500/10 rounded-2xl p-6"
               style={{ backgroundColor: 'rgba(25, 25, 31, 0.4)' }}
             >
-              {/* Question Header */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <span className="text-lg font-semibold text-white">
                     Question {index + 1}
                   </span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getDifficultyColor(result.question.difficulty.toString())}`}>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getDifficultyColor(result.question.difficulty)}`}>
                     {result.question.difficulty.toUpperCase()}
                   </span>
                   <span className="text-gray-400 text-sm">
@@ -216,13 +221,11 @@ export default function ResultsPage() {
                 </div>
               </div>
 
-              {/* Question */}
               <div className="mb-4">
                 <h4 className="font-medium text-cyan-400 mb-2">Question:</h4>
                 <p className="text-gray-300">{result.question.question}</p>
               </div>
 
-              {/* Answer */}
               <div className="mb-4">
                 <h4 className="font-medium text-purple-400 mb-2">Your Answer:</h4>
                 <p className="text-gray-300 bg-gray-800/30 p-3 rounded-lg">
@@ -230,7 +233,6 @@ export default function ResultsPage() {
                 </p>
               </div>
 
-              {/* Feedback */}
               <div className="grid md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <h4 className="font-medium text-green-400 mb-2">Strengths:</h4>
@@ -250,7 +252,6 @@ export default function ResultsPage() {
                 </div>
               </div>
 
-              {/* Summary */}
               <div className="border-t border-gray-600 pt-4">
                 <h4 className="font-medium text-pink-400 mb-2">Summary:</h4>
                 <p className="text-gray-300 text-sm">{result.feedback.summary}</p>
