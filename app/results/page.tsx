@@ -147,7 +147,8 @@ export default function ResultsPage() {
     <div className="min-h-screen relative">
       <div className="grid-background"></div>
       
-      <div className="relative z-10 container mx-auto px-4 py-8">
+      <div className="relative z-10 container mx-auto px-4 py-8 flex items-center justify-center min-h-screen">
+        <div className="w-full max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
@@ -258,6 +259,7 @@ export default function ResultsPage() {
               </div>
             </div>
           ))}
+        </div>
         </div>
       </div>
     </div>
