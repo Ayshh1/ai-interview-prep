@@ -407,62 +407,42 @@ export default function AssessmentPage() {
   };
 
   const handleRunCode = async () => {
-    if (!selectedProblem) return;
+  if (!selectedProblem) return;
+  
+  setIsRunning(true);
+  setTestResults(null);
+  
+  try {
+    const response = await fetch('/api/review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: userCode,
+        problemTitle: selectedProblem.title,
+        language: selectedLanguage
+      }),
+    });
+
+    const data = await response.json();
     
-    setIsRunning(true);
-    setTestResults(null);
-    
-    // Basic validation - check if user actually wrote code
-    const starterCode = selectedProblem.starterCode[selectedLanguage] || '';
-    const hasUserCode = userCode.trim() !== starterCode.trim();
-    
-    if (!hasUserCode) {
-      setTestResults({
-        status: 'error',
-        output: 'Please write your solution before running tests',
-        executionTime: '0s',
-        memory: '0MB'
-      });
-      setIsRunning(false);
-      return;
-    }
-    
-    // Syntax validation
-    const syntaxCheck = validateSyntax(userCode, selectedLanguage);
-    if (!syntaxCheck.isValid) {
-      setTestResults({
-        status: 'error',
-        output: `Syntax Error: ${syntaxCheck.error}`,
-        executionTime: '0s',
-        memory: '0MB'
-      });
-      setIsRunning(false);
-      return;
-    }
-    
-    // Simulate code execution with validation
-    setTimeout(() => {
-      // Check for basic solution patterns
-      const hasLogic = userCode.includes('return') || userCode.includes('console.log') || userCode.includes('print');
-      
-      if (hasLogic) {
-        setTestResults({
-          status: 'success',
-          output: 'Test cases passed!',
-          executionTime: '0.05s',
-          memory: '32MB'
-        });
-      } else {
-        setTestResults({
-          status: 'error',
-          output: 'No solution logic detected. Please implement the function.',
-          executionTime: '0s',
-          memory: '0MB'
-        });
-      }
-      setIsRunning(false);
-    }, 2000);
-  };
+    // This now sets the REAL data from Gemini
+    setTestResults({
+      status: data.status,
+      output: data.output,
+      executionTime: "N/A (AI Review)",
+      memory: data.feedback.complexity // We'll show complexity here instead
+    });
+
+    // Optional: You can add more UI to show the 'feedback' object too!
+  } catch (error) {
+    setTestResults({
+      status: 'error',
+      output: 'Failed to reach the AI reviewer.',
+    });
+  } finally {
+    setIsRunning(false);
+  }
+};
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {

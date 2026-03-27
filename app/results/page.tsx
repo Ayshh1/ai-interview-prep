@@ -26,35 +26,32 @@ interface AnswerWithFeedback {
 
 export default function ResultsPage() {
   const [copied, setCopied] = useState(false);
+  const [results, setResults] = useState<AnswerWithFeedback[]>([]);
+  const [role, setRole] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
   
   const router = useRouter();
 
-  // Load data synchronously during render
-  const [results, role] = (() => {
-    if (typeof window === 'undefined') return [[], ''] as [AnswerWithFeedback[], string];
-    
+  useEffect(() => {
+    // Load data only on client side
     const storedResults = sessionStorage.getItem('results');
     const storedRole = sessionStorage.getItem('role');
     
     if (!storedResults || !storedRole) {
-      // Redirect will happen in effect
-      return [[], ''] as [AnswerWithFeedback[], string];
+      router.push('/');
+      return;
     }
     
     try {
-      return [JSON.parse(storedResults), storedRole] as [AnswerWithFeedback[], string];
+      setResults(JSON.parse(storedResults));
+      setRole(storedRole);
     } catch (error) {
       console.error('Error loading results:', error);
-      return [[], ''] as [AnswerWithFeedback[], string];
-    }
-  })();
-
-  useEffect(() => {
-    // Redirect if data is missing
-    if (results.length === 0 && role === '') {
       router.push('/');
+    } finally {
+      setIsLoading(false);
     }
-  }, [router, results.length, role]);
+  }, [router]);
 
   const calculateAverageScore = (): string => {
     if (results.length === 0) return "0.0";
@@ -131,8 +128,8 @@ export default function ResultsPage() {
     router.push('/');
   };
 
-  // Prevent rendering until results are loaded
-  if (results.length === 0) {
+  // Prevent rendering until data is loaded
+  if (isLoading || results.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400"></div>
