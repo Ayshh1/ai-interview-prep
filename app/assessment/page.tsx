@@ -350,8 +350,15 @@ export default function AssessmentPage() {
         case 'python':
           // Basic Python syntax validation
           if (code.match(/def\s+\w+\s*\([^)]*\)\s*:/)) {
-            if (!code.match(/def\s+\w+\s*\([^)]*\)\s*:.*\n(\s+.+|\s*$)/s)) {
-              return { isValid: false, error: 'Function body is missing or incomplete' };
+            // Check if function has a body (indented content after the colon)
+            const lines = code.split('\n');
+            const defIndex = lines.findIndex(line => line.match(/def\s+\w+\s*\([^)]*\)\s*:/));
+            if (defIndex !== -1) {
+              // Check if there's at least one indented line after the function definition
+              const nextLine = lines[defIndex + 1];
+              if (!nextLine || !nextLine.match(/^\s+/)) {
+                return { isValid: false, error: 'Function body is missing or incomplete' };
+              }
             }
           }
           if (code.match(/:\s*$/)) {
