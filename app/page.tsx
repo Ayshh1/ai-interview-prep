@@ -97,7 +97,7 @@ export default function Home() {
       router.push('/interview');
     } catch (error) {
       console.error('Error generating questions:', error);
-      setError(`Failed to generate questions: ${error instanceof Error ? error.message : 'Unknown error'}. Please check your API key configuration.`);
+            setError(`API limit reached for today! Please try again in 24 hours`);
     } finally {
       setIsLoading(false);
     }
