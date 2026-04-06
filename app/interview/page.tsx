@@ -24,7 +24,7 @@ interface AnswerWithFeedback {
   feedback: Feedback;
 }
 
-// 1. Separate the Instance from the Constructor for proper TypeScript typing
+// Speech recognition interfaces
 interface WebkitSpeechRecognitionInstance {
   continuous: boolean;
   interimResults: boolean;
@@ -60,10 +60,10 @@ export default function InterviewPage() {
   const [answersWithFeedback, setAnswersWithFeedback] = useState<AnswerWithFeedback[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isChrome, setIsChrome] = useState(true);
+  const [startTime, setStartTime] = useState<number>(0);
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
   
   const router = useRouter();
-  
-  // 2. Use the Instance type here
   const recognitionRef = useRef<WebkitSpeechRecognitionInstance | null>(null);
 
   useEffect(() => {
@@ -71,6 +71,7 @@ export default function InterviewPage() {
     
     const storedQuestions = sessionStorage.getItem('questions');
     const storedRole = sessionStorage.getItem('role');
+    const storedStartTime = sessionStorage.getItem('startTime');
     
     if (!storedQuestions || !storedRole) {
       router.push('/');
@@ -80,14 +81,26 @@ export default function InterviewPage() {
     try {
       setQuestions(JSON.parse(storedQuestions));
       setRole(storedRole);
+      if (storedStartTime) {
+        setStartTime(parseInt(storedStartTime));
+      }
     } catch (error) {
       console.error('Error loading session data:', error);
       router.push('/');
     }
   }, [router]);
 
+  // Timer effect
   useEffect(() => {
-    // 3. Initialize with proper casting
+    if (startTime > 0) {
+      const interval = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [startTime]);
+
+  useEffect(() => {
     if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
       const SpeechRecognition = (window as any).webkitSpeechRecognition as WebkitSpeechRecognitionConstructor;
       
@@ -98,7 +111,6 @@ export default function InterviewPage() {
 
       recognition.onresult = (event: WebkitSpeechRecognitionEvent) => {
         let transcript = '';
-        // 4. Improved logic: only take final results to prevent massive text duplication
         for (let i = event.resultIndex; i < event.results.length; i++) {
           if (event.results[i].isFinal) {
             transcript += event.results[i][0].transcript;
@@ -112,6 +124,16 @@ export default function InterviewPage() {
       recognition.onerror = (event: WebkitSpeechRecognitionErrorEvent) => {
         console.error('Speech recognition error:', event.error);
         setIsRecording(false);
+        
+        if (event.error === 'not-allowed') {
+          setError('Microphone access denied. Please allow microphone access in your browser settings and try again.');
+        } else if (event.error === 'no-speech') {
+          setError('No speech detected. Please try speaking clearly.');
+        } else if (event.error === 'network') {
+          setError('Network error occurred. Please check your internet connection.');
+        } else {
+          setError(`Speech recognition error: ${event.error}`);
+        }
       };
 
       recognitionRef.current = recognition;
@@ -193,19 +215,16 @@ export default function InterviewPage() {
     }
   };
 
-  const getConfidenceColor = (confidence: string) => {
-    switch (confidence) {
-      case 'high': return 'bg-green-500/20 text-green-300 border-green-400';
-      case 'medium': return 'bg-yellow-500/20 text-yellow-300 border-yellow-400';
-      case 'low': return 'bg-red-500/20 text-red-300 border-red-400';
-      default: return 'bg-gray-500/20 text-gray-300 border-gray-400';
-    }
-  };
-
   const getScoreColor = (score: number) => {
     if (score < 5) return 'text-red-400';
     if (score < 8) return 'text-yellow-400';
     return 'text-green-400';
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   if (questions.length === 0) {
@@ -239,6 +258,13 @@ export default function InterviewPage() {
               <span className="text-sm font-medium text-cyan-400">Question {currentQuestionIndex + 1} of {questions.length}</span>
               <div className="w-px h-4 bg-gray-600"></div>
               <span className="text-sm">{role}</span>
+              <div className="w-px h-4 bg-gray-600"></div>
+              <div className="flex items-center gap-1">
+                <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm font-medium text-yellow-400">{formatTime(elapsedTime)}</span>
+              </div>
             </div>
           </div>
           <div className="mt-4 w-full max-w-md mx-auto">

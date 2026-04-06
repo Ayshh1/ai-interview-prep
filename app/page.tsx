@@ -9,7 +9,12 @@ const roles = [
   'Full Stack Developer',
   'React Developer',
   'Node.js Developer',
-  'DevOps Engineer'
+  'DevOps Engineer',
+  'Mobile Developer',
+  'Android Developer',
+  'iOS Developer',
+  'Flutter Developer',
+  'React Native Developer'
 ];
 
 const techStacks = [
@@ -24,7 +29,21 @@ const techStacks = [
   'Docker',
   'AWS',
   'GraphQL',
-  'Redis'
+  'Redis',
+  'Android',
+  'iOS',
+  'Flutter',
+  'React Native',
+  'Kotlin',
+  'Swift',
+  'Objective-C',
+  'Jetpack Compose',
+  'SwiftUI',
+  'UIKit',
+  'Firebase',
+  'SQLite',
+  'Core Data',
+  'Room Database'
 ];
 
 const programmingLanguages = [
@@ -32,13 +51,18 @@ const programmingLanguages = [
   { id: 'typescript', name: 'TypeScript', icon: '🔷' },
   { id: 'python', name: 'Python', icon: '🐍' },
   { id: 'java', name: 'Java', icon: '☕' },
-  { id: 'csharp', name: 'C#', icon: '🔷' }
+  { id: 'csharp', name: 'C#', icon: '🔷' },
+  { id: 'kotlin', name: 'Kotlin', icon: '🟣' },
+  { id: 'swift', name: 'Swift', icon: '🔴' },
+  { id: 'objectivec', name: 'Objective-C', icon: '🔵' },
+  { id: 'dart', name: 'Dart', icon: '🟦' }
 ];
 
 export default function Home() {
   const [selectedRole, setSelectedRole] = useState('');
   const [selectedStacks, setSelectedStacks] = useState<string[]>([]);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [experience, setExperience] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -60,8 +84,8 @@ export default function Home() {
   };
 
   const handleStartInterview = async () => {
-    if (!selectedRole || selectedStacks.length === 0 || selectedLanguages.length === 0) {
-      setError('Please select a role, at least one tech stack, and at least one programming language');
+    if (!selectedRole || selectedStacks.length === 0 || selectedLanguages.length === 0 || !experience) {
+      setError('Please select a role, experience level, at least one tech stack, and at least one programming language');
       return;
     }
 
@@ -77,7 +101,8 @@ export default function Home() {
         body: JSON.stringify({
           role: selectedRole,
           stack: selectedStacks.join(', '),
-          languages: selectedLanguages.join(', ')
+          languages: selectedLanguages.join(', '),
+          experience: experience
         }),
       });
 
@@ -92,6 +117,8 @@ export default function Home() {
       sessionStorage.setItem('questions', JSON.stringify(data.questions));
       sessionStorage.setItem('role', selectedRole);
       sessionStorage.setItem('selectedLanguages', JSON.stringify(selectedLanguages));
+      sessionStorage.setItem('experience', experience);
+      sessionStorage.setItem('startTime', Date.now().toString());
       
       // Navigate to interview page
       router.push('/interview');
@@ -213,6 +240,41 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Experience Level Selection */}
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+                </svg>
+                <h2 className="text-2xl font-semibold text-yellow-400">Select Your Experience Level</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {[
+                  { id: 'entry', name: 'Entry Level (0-2 years)', description: 'Basic concepts and fundamentals' },
+                  { id: 'mid', name: 'Mid Level (2-5 years)', description: 'Intermediate concepts and practical experience' },
+                  { id: 'senior', name: 'Senior Level (5+ years)', description: 'Advanced concepts and architecture' }
+                ].map((exp) => (
+                  <button
+                    key={exp.id}
+                    onClick={() => setExperience(exp.id)}
+                    className={`p-4 rounded-lg border transition-all duration-200 text-left ${
+                      experience === exp.id
+                        ? 'bg-yellow-500/20 border-yellow-400 text-yellow-300 shadow-lg shadow-yellow-500/10'
+                        : 'border-gray-600 text-gray-300 hover:border-yellow-500/50 hover:text-yellow-200 hover:bg-yellow-500/5'
+                    }`}
+                  >
+                    <div className="font-medium mb-1">{exp.name}</div>
+                    <div className="text-xs text-gray-400">{exp.description}</div>
+                    {experience === exp.id && (
+                      <svg className="w-4 h-4 mt-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Tech Stack Selection */}
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-4">
@@ -280,9 +342,9 @@ export default function Home() {
             <div className="text-center">
               <button
                 onClick={handleStartInterview}
-                disabled={isLoading || !selectedRole || selectedStacks.length === 0 || selectedLanguages.length === 0}
+                disabled={isLoading || !selectedRole || selectedStacks.length === 0 || selectedLanguages.length === 0 || !experience}
                 className={`px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 relative overflow-hidden group ${
-                  isLoading || !selectedRole || selectedStacks.length === 0 || selectedLanguages.length === 0
+                  isLoading || !selectedRole || selectedStacks.length === 0 || selectedLanguages.length === 0 || !experience
                     ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                     : 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white hover:from-cyan-600 hover:to-purple-600 transform hover:scale-105 shadow-lg hover:shadow-xl'
                 }`}
